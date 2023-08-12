@@ -6,7 +6,7 @@
 
 namespace py = pybind11;
 using PyArrayFloat = py::array_t<double>;
-
+using PyListInt = std::vector<int>;
 
 class CVutils
 {
@@ -14,8 +14,6 @@ private:
     std::string filename;
 
 public:
-    // CVutils(const std::string &name)
-    //     : filename(name) {}
     py::array_t<uint8_t> process_image(std::string &filename, int width, int height)
     {
         cv::Mat input_image = cv::imread(filename, cv::IMREAD_COLOR);
@@ -33,26 +31,22 @@ public:
         if (buf1.ndim != 1 || buf2.ndim != 1)
             throw std::runtime_error("Number of dimensions must be one");
 
-    if (buf1.size != buf2.size)
-        throw std::runtime_error("Input shapes must match");
-    
+        if (buf1.size != buf2.size)
+            throw std::runtime_error("Input shapes must match");
 
-    // /* No pointer is passed, so NumPy will allocate the buffer */
-    PyArrayFloat result = PyArrayFloat(buf1.size);
-    py::buffer_info buf3 = result.request();
+        // /* No pointer is passed, so NumPy will allocate the buffer */
+        PyArrayFloat result = PyArrayFloat(buf1.size);
+        py::buffer_info buf3 = result.request();
 
-    double *ptr1 = static_cast<double *>(buf1.ptr);
-    double *ptr2 = static_cast<double *>(buf2.ptr);
-    double *ptr3 = static_cast<double *>(buf3.ptr);
-    for (size_t idx = 0; idx < buf1.shape[0]; idx++)
-        ptr3[idx] = ptr1[idx] + ptr2[idx];
+        double *ptr1 = static_cast<double *>(buf1.ptr);
+        double *ptr2 = static_cast<double *>(buf2.ptr);
+        double *ptr3 = static_cast<double *>(buf3.ptr);
+        for (size_t idx = 0; idx < buf1.shape[0]; idx++)
+            ptr3[idx] = ptr1[idx] + ptr2[idx];
 
-    return result;
+        return result;
     }
-
 };
-
-
 
 PYBIND11_MODULE(myLib, m)
 {
@@ -60,9 +54,35 @@ PYBIND11_MODULE(myLib, m)
     py::class_<CVutils>(m, "CVutils")
         .def(py::init<>())
         .def("process_image", &CVutils::process_image, "preprocess an image")
-        .def("add_arrays", &CVutils::add_arrays, "Add two NumPy arrays")
-        ;
+        .def("add_arrays", &CVutils::add_arrays, "Add two NumPy arrays");
+
+    py::class_<PyListInt>(m, "MyList")
+        .def(py::init<>())
+        .def("append", (void(PyListInt::*)(const int &)) & PyListInt::push_back)
+        .def("clear", (void(PyListInt::*)()) & PyListInt::clear)
+        .def("pop", (void(PyListInt::*)()) & PyListInt::pop_back)
+        .def("__len__", [](const PyListInt &v)
+             { return v.size(); })
+        .def("__get__", [](const PyListInt &v, int idx)
+             { return v[idx]; })
+
+        .def("print", [](const PyListInt &l)
+             {
+                fprintf(stderr, "[");
+                auto it = l.begin();
+
+                if (it != l.end()) {
+                    fprintf(stderr, "%d", *it++);
+                }
+
+                for (; it != l.end(); ++it) {
+                    fprintf(stderr, ", %d", *it);
+                }
+
+                fprintf(stderr, "]\n"); })
+
+        .def(
+            "__iter__", [](PyListInt &v)
+            { return py::make_iterator(v.begin(), v.end()); },
+            py::keep_alive<0, 1>());
 }
-
-
-
