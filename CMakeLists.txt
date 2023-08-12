@@ -26,7 +26,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   target_compile_definitions(${PROJECT_NAME}
   PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
 
-#
 # Print out the value of PYBIND11_INCLUDE_DIRS
 message(STATUS "PYBIND11_INCLUDE_DIRS: ${PYBIND11_INCLUDE_DIRS}")
 message(STATUS ":OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
