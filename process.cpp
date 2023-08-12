@@ -5,6 +5,8 @@
 #include <iostream>
 
 namespace py = pybind11;
+using PyArrayFloat = py::array_t<double>;
+
 
 class CVutils
 {
@@ -23,7 +25,7 @@ public:
         return py::array({height, width, static_cast<int>(resized_image.channels())}, resized_image.data);
     }
 
-    py::array_t<double> add_arrays(py::array_t<double> input1, py::array_t<double> input2)
+    PyArrayFloat add_arrays(PyArrayFloat input1, PyArrayFloat input2)
     // py::array_t<double> add_arrays(py::array_t<double, py::array::c_style | py::array::forcecast> input1, py::array_t<double, py::array::c_style | py::array::forcecast> input2)
     {
         py::buffer_info buf1 = input1.request();
@@ -36,7 +38,7 @@ public:
     
 
     // /* No pointer is passed, so NumPy will allocate the buffer */
-    py::array_t<double> result = py::array_t<double>(buf1.size);
+    PyArrayFloat result = PyArrayFloat(buf1.size);
     py::buffer_info buf3 = result.request();
 
     double *ptr1 = static_cast<double *>(buf1.ptr);
@@ -50,7 +52,7 @@ public:
 
 };
 
-namespace py = pybind11;
+
 
 PYBIND11_MODULE(myLib, m)
 {
