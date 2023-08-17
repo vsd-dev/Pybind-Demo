@@ -4,10 +4,13 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <pybind11/functional.h>
+#include <thread>
+
 namespace py = pybind11;
 using PyArrayFloat = py::array_t<double>;
 using PyListInt = std::vector<int>;
 using Pyuint8 = py::array_t<uint8_t>;
+using callback_f = std::function<void(int)>;
 
 class CVutils
 {
@@ -89,9 +92,11 @@ public:
     }
 };
 
+
 PYBIND11_MODULE(myLib, m)
 {
-    m.doc() = "Pybind Demo Class";
+    m.doc() = "Pybind Demos";
+    
     py::class_<CVutils>(m, "CVutils")
         .def(py::init<>())
         .def("process_image", &CVutils::process_image, "preprocess an image")
@@ -131,4 +136,22 @@ PYBIND11_MODULE(myLib, m)
             "__iter__", [](PyListInt &v)
             { return py::make_iterator(v.begin(), v.end()); },
             py::keep_alive<0, 1>());
+
+    
+    m.def("test_async_callback", [](const callback_f &f, const py::list &work) {
+        // make detached thread that calls `f` with piece of work after a little delay
+        auto start_f = [f](int j) {
+            auto invoke_f = [f, j] {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                f(j);
+            };
+            auto t = std::thread(std::move(invoke_f));
+            t.detach();
+        };
+        
+        // spawn worker threads
+        for (auto i : work) {
+            start_f(py::cast<int>(i));
+        }
+    });
 }
