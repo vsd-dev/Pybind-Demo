@@ -30,8 +30,26 @@ public:
         // Perform image processing, such as resizing
         int width = image.cols;
         int height = image.rows;
-        return py::array({height, width, static_cast<int>(image.channels())}, image.data);
+        py::array reult(py::array({height, width, static_cast<int>(image.channels())}, image.data));
+        return reult;
     }
+
+    Pyuint8 read_image_with_cb(std::string &filename, py::function& mycallback)
+    {
+        cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
+        // Perform image processing, such as resizing
+        int width = image.cols;
+        int height = image.rows;
+        py::array result(py::array({height, width, static_cast<int>(image.channels())}, image.data));
+        // module_manager.run(&mycallback())
+    
+        return mycallback(result);
+    }
+
+    // void mycallback ()
+    // {
+    //     return callback(result);
+    // };
 
     Pyuint8 resizeImage(const Pyuint8& pixels, size_t w, size_t h) 
     {
@@ -79,6 +97,7 @@ PYBIND11_MODULE(myLib, m)
         .def("process_image", &CVutils::process_image, "preprocess an image")
         .def("read_image", &CVutils::read_image, "read an image")
         .def("resize_image", &CVutils::resizeImage, "Resize an image")
+        .def("read_with_callback", &CVutils::read_image_with_cb, "Resize an image in a callback")
         .def("add_arrays", &CVutils::add_arrays, "Add two NumPy arrays")
         // .def("process_image_with_cb", &CVutils::process_image_cb, "Add two NumPy arrays")
         ;
